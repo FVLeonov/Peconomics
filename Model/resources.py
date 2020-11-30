@@ -25,3 +25,6 @@ resources = [Resource(name="Grain", replenish=Replenish(1, 0, 0, 0)),
              Resource(name="Dyes", replenish=Replenish(0, 0, 1, 1)),
              ]
 
+resourcesDict = {r.name: r for r in resources}
+
+
