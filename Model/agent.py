@@ -1,7 +1,8 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import List, Dict
 from Model.parameters import Occupation
 from Model.parameters import DataBase
-from Model.resources import resources
+from Model.resources import resources, resourcesDict
 
 
 @dataclass
@@ -23,25 +24,27 @@ class Agent:
     name: str
     demands = Demands(Demand(1, 0), Demand(1, 0), Demand(1, 0), Demand(1, 0))
     occupation: Occupation
-    socialPoints = 0
     cash: float
-    store = {}
-    
+    store: Dict[str, float] = field(default_factory=lambda: {})
+
+    socialPoints: int = 0
     # буферные данные
     
-    recivedCash = 0
-    possiblePriorResources = []
-    priorResource = None
+    recivedCash: float = 0.0
+    possiblePriorResources: List[str] = field(default_factory=lambda: [])
+    priorResourceName: str = None
     
+
     def consume(self):
         # берет ресурс, который задан аргументом, и убирает со склада в количестве 1 и удовлетворяет свои потребности
         # в количестве определеяемом типом ресурса
-        self.demands.fullness.filled += self.priorResource.replenish.fullness
-        self.demands.comfort.filled += self.priorResource.replenish.comfort
-        self.demands.entertainment.filled += self.priorResource.replenish.entertainment
-        self.demands.prestige.filled += self.priorResource.replenish.prestige
+        priorityResource = resourcesDict[self.priorResourceName]
+        self.demands.fullness.filled += priorityResource.replenish.fullness
+        self.demands.comfort.filled += priorityResource.replenish.comfort
+        self.demands.entertainment.filled += priorityResource.replenish.entertainment
+        self.demands.prestige.filled += priorityResource.replenish.prestige
         
-        self.addRes(self.priorResource, -1)
+        self.addRes(self.priorResourceName, -1)
     
     def produce(self):
         # из occupation берет производимый ресрс и его количество производимое за единицу времени (производительность)
@@ -49,26 +52,26 @@ class Agent:
         
         resource = self.occupation.resource
         
-        self.addRes(resource, self.occupation.productivity)
+        self.addRes(resource.name, self.occupation.productivity)
     
-    def addRes(self, res, amount):
+    def addRes(self, resName, amount):
         
-        if res in self.store.keys():
-            self.store[res] += amount
+        if resName in self.store.keys():
+            self.store[resName] += amount
         
         else:
-            self.store[res] = amount
+            self.store[resName] = amount
             
-        if self.store[self.priorResource] <= 0:
-            del self.store[self.priorResource]
+        if self.priorResourceName and self.priorResourceName in self.store.keys() and  self.store[self.priorResourceName] <= 0:
+            del self.store[self.priorResourceName]
     
     def buy(self, seller, res_price):
         
         self.cash -= res_price
         seller.recivedCash += res_price
         
-        self.addRes(self.priorResource, 1)
-        seller.addres(self.priorResource, -1)
+        self.addRes(self.priorResourceName, 1)
+        seller.addres(self.priorResourceName, -1)
     
     def update(self, db: DataBase):
 

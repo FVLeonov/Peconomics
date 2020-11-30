@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from time import sleep
-from typing import List
-from typing import Dict
+from typing import List, Dict
 
 from Model.agent import Agent
 from Model.parameters import DataBase, occupations
@@ -11,7 +10,7 @@ from Model.parameters import DataBase, occupations
 class World:
     agentsList: List[Agent]
     myData: DataBase
-    prices: Dict
+    prices: Dict[str, float]
 
     def nextStep(self):
         supply_and_demand = {"Grain": [1, 1],
@@ -25,7 +24,7 @@ class World:
                              }
 
         for a in self.agentsList:
-            for r in a.store:
+            for r in a.store.keys():
                 supply_and_demand += a.store[r]
 
         # фаза обновления агентов
@@ -63,7 +62,7 @@ class World:
                             a.possiblePriorResources.remove(r)
 
                     if top_priority > 0:
-                        a.priorResource = top_res
+                        a.priorResourceName = top_res.name
                         supply_and_demand[top_res.name][1] += 1
                         a.possiblePriorResources.remove(top_res)
 
@@ -73,7 +72,7 @@ class World:
                 # фаза поиска ресурса в хранилище и его потребление (если есть в хранилище)
 
                 for a in trade_cycle_list:
-                    if a.priorResource in a.store:
+                    if a.priorResourceName in a.store:
                         a.consume()
                         trade_cycle_list.remove(a)
 
@@ -82,15 +81,16 @@ class World:
                 trade_cycle_list.sort(key=lambda x: x.cash)
 
                 for a in trade_cycle_list:
-                    if a.cash < self.prices[a.priorResource.name]:
-                        a.possiblePriorResources.remove(a.priorResource)
+                    if a.cash < self.prices[a.priorResourceName]:
+                        a.possiblePriorResources.remove(a.priorResourceName)
                         break
                     else:
-                        agents_with_resource_list = [x for x in trade_cycle_list if a.priorResource in x.store]
-                        agents_with_resource_list.sort(key=lambda x: x.store[a.priorResource])
-                        a.buy(agents_with_resource_list[0], self.prices)
-                        a.consume()
-                        trade_cycle_list.remove(a)
+                        agents_with_resource_list = [x for x in trade_cycle_list if a.priorResourceName in x.store]
+                        agents_with_resource_list.sort(key=lambda x: x.store[a.priorResourceName])
+                        if agents_with_resource_list:
+                            a.buy(agents_with_resource_list[0], self.prices)
+                            a.consume()
+                            trade_cycle_list.remove(a)
 
                 if not trade_cycle_list:
                     break
@@ -102,38 +102,3 @@ class World:
     def run(self):
         self.nextStep()
         sleep(1.0)
-
-
-if __name__ == '__main__':
-    agents = [
-        Agent(name="Ivan", occupation=occupations['CropFarmer'], cash=10.0)
-    ]
-
-    initial_prices = {"Grain": 1,
-                      "Cheese": 1,
-                      "Wool": 1,
-                      "Furs": 1,
-                      "Beer": 1,
-                      "Silk": 1,
-                      "Salt": 1,
-                      "Dyes": 1
-
-                      }
-
-    database = DataBase(
-        baseProductivity=
-        {
-            "CropFarmer": 4,
-            "CattleFarmer": 3,
-            "SheepFarmer": 5,
-            "Hunter": 3,
-            "Brewer": 5,
-            "Sericulturist": 3,
-            "Salter": 4,
-            "Dyer": 3
-        },
-        socialPointsCoeff=1,
-        priceGrowCoeff=1
-    )
-    world = World(agentsList=agents, myData=database, prices=initial_prices)
-    world.run()
