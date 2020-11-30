@@ -23,26 +23,29 @@ class World:
                              "Dyes": [1, 1]
                              }
 
-        for a in self.agentsList:
-            for r in a.store.keys():
-                supply_and_demand += a.store[r]
-
         # фаза обновления агентов
 
         for a in self.agentsList:
             a.update(self.myData)
+            
+        # подсчет предложения
+
+        for a in self.agentsList:
+            for r in a.store.keys():
+                supply_and_demand[r][0] += a.store[r]
 
         # фаза тоговли и потребления
-        trade_phase_list = self.agentsList
+        
+        trade_phase_list = list(self.agentsList)
         while True:
-            trade_cycle_list = trade_phase_list
+            trade_cycle_list = list(trade_phase_list)
             if not trade_phase_list:
                 break
             while True:
 
                 # фаза вычисления приоритетного ресурса
 
-                for a in trade_cycle_list:
+                for a in list(trade_cycle_list):
                     top_res = None
                     top_priority = 0
 
@@ -68,10 +71,11 @@ class World:
 
                     else:
                         trade_phase_list.remove(a)
+                        trade_cycle_list.remove(a)
 
                 # фаза поиска ресурса в хранилище и его потребление (если есть в хранилище)
 
-                for a in trade_cycle_list:
+                for a in list(trade_cycle_list):
                     if a.priorResourceName in a.store:
                         a.consume()
                         trade_cycle_list.remove(a)
@@ -80,7 +84,7 @@ class World:
 
                 trade_cycle_list.sort(key=lambda x: x.cash)
 
-                for a in trade_cycle_list:
+                for a in list(trade_cycle_list):
                     if a.cash < self.prices[a.priorResourceName]:
                         a.possiblePriorResources.remove(a.priorResourceName)
                         break
