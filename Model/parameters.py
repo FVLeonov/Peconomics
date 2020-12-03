@@ -29,3 +29,24 @@ class DataBase:
     baseProductivity: Dict
     socialPointsCoeff: float
     priceGrowCoeff: float
+
+
+database = DataBase(
+    baseProductivity={
+        "CropFarmer": 3,
+        "SheepFarmer": 2,
+        "Brewer": 2,
+        "Dyer": 2,
+        "Sericulturist": 2
+    },
+    socialPointsCoeff=1,
+    priceGrowCoeff=0.1
+)
+
+initial_prices = {
+    "Grain": 50,
+    "Wool": 50,
+    "Beer": 50,
+    "Dyes": 50,
+    "Silk": 50
+}
